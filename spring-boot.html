@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Monitoring Spring Boot Applications</title>
+
+		<meta name="description" content="How to use Artifactory in R&D">
+		<meta name="author" content="Ganesh Ramasubramanian">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h4>Monitoring Spring Boot Applications</h4>
+					<p>
+						<small>
+							<a href="https://github.com/rgannu">Ganesh Ramasubramanian</a>
+							<p>31-Mar-2017</p>
+							<br/>
+							<div style="float: right;">
+							  <img data-src="images/nokia-logo.png">
+							</div>
+						</small>
+					</p>
+				</section>
+
+				<section>
+					<h3>Agenda</h3>
+						<ul>
+							<li class="fragment">Monitoring Tools</li>
+							<li class="fragment">Spring Boot Admin</li>
+							<li class="fragment">Why ?</li>
+							<li class="fragment">Demo</li>
+							<li class="fragment">Screenshots</li>
+							<li class="fragment">Q & A</li>
+					</ul>
+				</section>
+
+				<section>
+					<h3>Monitoring Tools</h3>
+						<ul>
+							<li class="fragment">Custom monitor !!!</li>
+							<li class="fragment">Spring Boot Actuator</li>
+							<li class="fragment">Spring Boot Admin</li>
+					</ul>
+				</section>
+
+				<section>
+					<h3>Spring Boot Admin</h3>
+						<ul>
+							<li class="fragment">Author: Johannes Edmeier</li>
+							<li class="fragment"><a href="https://github.com/hakimel/reveal.js#api">Spring boot documentation</a> </li>
+							<li class="fragment">Simple Application to Manage and Monitor</li>
+							<li class="fragment">Apps register with Spring Boot Admin Client (via http) or discovered using Spring Cloud</li>
+							<li class="fragment">UI is in Angular.js and nice</li>
+					</ul>
+				</section>
+				<section>
+					<h3>Setup Admin server</h3>
+					Add spring boot admin server and UI as depedencies
+					<pre><code class="xml" data-trim contenteditable>
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-server</artifactId>
+    <version>1.4.6</version>
+</dependency>
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-server-ui</artifactId>
+    <version>1.4.6</version>
+</dependency>
+						</code>
+					</pre>
+				</section>
+
+				<section>
+					<h3>Setup Admin server</h3>
+					Pull in the Boot Admin Server configuration
+					<pre><code class="java" data-trim contenteditable>
+@Configuration
+@EnableAutoConfiguration
+@EnableAdminServer
+public class SpringBootAdminApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(SpringBootAdminApplication.class, args);
+    }
+}
+						</code>
+					</pre>
+				</section>	
+
+
+				<section>
+					<h3>Register client applications</h3>
+					spring-boot-admin-starter-client
+					<pre><code class="xml" data-trim contenteditable>
+<dependency>
+    <groupId>de.codecentric</groupId>
+    <artifactId>spring-boot-admin-starter-client</artifactId>
+    <version>1.4.6</version>
+</dependency>
+						</code>
+					</pre>
+				</section>	
+
+				<section>
+					<h3>Register client applications</h3>
+					Trigger the contained AutoConfiguration
+					<pre><code class="yaml" data-trim contenteditable>
+application.yml
+
+spring.boot.admin.url: http://localhost:8080
+						</code>
+					</pre>
+				</section>	
+
+				<section>
+					<h3>Demo</h3>
+					<a href="https://github.com/rgannu/playground/tree/master/camel/spring-boot-monitoring">Spring boot sample application</a>
+					<small>https://github.com/rgannu/playground/tree/master/camel/spring-boot-monitoring</small>
+				</section>
+
+        <section>
+          <section>
+          	<small>Desktop Notifications</small>
+						<img data-src="https://github.com/codecentric/spring-boot-admin/blob/master/images/screenshot.png?raw=true">
+					</section>
+					<section>
+						<small>View history of registered applications</small>
+						<img data-src="https://github.com/rgannu/playground/blob/master/camel/spring-boot-monitoring/images/sba-home.jpg?raw=true">
+					</section>
+					<section>
+						<small>View application health, info and details</small>
+						<img data-src="https://github.com/rgannu/playground/blob/master/camel/spring-boot-monitoring/images/sba-details.jpg?raw=true">
+					</section>
+					<section>
+						<small>View metrics, counters and gauges</small>
+						<img data-src="https://github.com/rgannu/playground/blob/master/camel/spring-boot-monitoring/images/sba-metrics.jpg?raw=true">
+					</section>
+					<section>
+						<small>View logfile (with follow)</small>
+						<img data-src="https://github.com/rgannu/playground/blob/master/camel/spring-boot-monitoring/images/sba-log.jpg?raw=true">
+					</section>
+					
+					<section>
+						<small>Manage Logback logger levels</small>
+						<img data-src="https://github.com/codecentric/spring-boot-admin/blob/master/images/screenshot-logging.png?raw=true">
+					</section>
+					<section>
+						<small>View and use JMX beans via jolokia</small>
+						<img data-src="https://github.com/rgannu/playground/blob/master/camel/spring-boot-monitoring/images/sba-jmx.jpg?raw=true">
+					</section>
+					<section>
+						<small>View thread dump</small>
+						<img data-src="https://github.com/rgannu/playground/blob/master/camel/spring-boot-monitoring/images/sba-threads.jpg?raw=true">
+					</section>
+					<section>
+						<small>View http request traces</small>
+						<img data-src="https://github.com/rgannu/playground/blob/master/camel/spring-boot-monitoring/images/sba-trace.jpg?raw=true">
+					</section>
+					<section>
+						<small>View Hystrix dashboard</small>
+						<img data-src="https://github.com/codecentric/spring-boot-admin/blob/master/images/screenshot-hystrix.png?raw=true">
+					</section>
+					<section>
+						<small>View and change Spring environment (via Spring Cloud)</small>
+						<img data-src="https://github.com/rgannu/playground/blob/master/camel/spring-boot-monitoring/images/sba-environment.jpg?raw=true">
+					</section>
+				</section>
+
+				<section>
+					<h3>Q & A</h3>
+					<img data-src="/images/q-n-a.jpg">
+				</section>
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				markdown: {
+					smartypants: true
+				},
+				// Display the page number of the current slide
+				slideNumber: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+			Reveal.configure({ slideNumber: 'c/t' });
+
+		</script>
+
+	</body>
+</html>

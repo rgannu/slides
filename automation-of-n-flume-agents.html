@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Automation of N-Flume Agents via DAF</title>
+
+    <meta name="description" content="How to use Artifactory in R&D">
+    <meta name="author" content="Ganesh Ramasubramanian">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = window.location.search.match(/print-pdf/gi) ? 'css/print/pdf.css' : 'css/print/paper.css';
+        document.getElementsByTagName('head')[0].appendChild(link);
+    </script>
+
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+<div class="reveal">
+
+    <!-- Any section element inside of this container is displayed as a slide -->
+    <div class="slides">
+        <section>
+            <h4>Automation of N-Flume Agents via DAF</h4>
+            <p>
+                <small>
+                    <a href="https://github.com/rgannu">Ganesh Ramasubramanian</a>
+            <p>27-Jun-2017</p>
+            <br/>
+            <div style="float: right;">
+                <img data-src="images/nokia-logo.png">
+            </div>
+            </small>
+            </p>
+        </section>
+
+        <section>
+            <h3>Agenda</h3>
+            <ul>
+                <li class="fragment">Need of N Flume Agents</li>
+                <li class="fragment">Changes in the MAS side</li>
+                <li class="fragment">How a consumer can use ?</li>
+                <li class="fragment">How a new MAS CSV plugin can be added ?</li>
+                <li class="fragment">How only flume configuration can be added ?</li>
+                <li class="fragment">Q & A</li>
+            </ul>
+        </section>
+
+        <section>
+            <h3>Need of N Flume Agents</h3>
+            <ul>
+                <li class="fragment">Home Analytics - <a href="http://jira.motive.com/browse/HDA-9402">HDA-9402</a></li>
+            </ul>
+        </section>
+
+        <section>
+            <h3>Changes in the MAS side</h3>
+            <ul>
+                <li class="fragment">MAS ticket - <a href="http://jira.motive.com/browse/MAS-1390">MAS-1390</a></li>
+                <li class="fragment">Changes in the MAS Module</li>
+                <li class="fragment">Changes in the CDH Module</li>
+                <li class="fragment">Demo CSV plugin</li>
+            </ul>
+        </section>
+
+        <section>
+            <h3>Changes in the MAS module - data/configuration.yaml</h3>
+            <pre><code class="yaml" data-trim contenteditable>
+---
+defaults:
+  ensure:                           'present'
+  config_directory:                 "/etc/flume-ng/conf.%{mas306::cluster_name}"
+  flume_user:                       'flume'
+  flume_group:                      'flume'
+  java_home:                        undef
+  flume_classpath:                  undef
+  flume_shutdown_timeout:           60
+  security_protocol:                "%{mas306::security_protocol}"
+  sasl_kafka_client_jaas_location:  "%{mas306::sasl_kafka_client_jaas_location}"
+  sasl_krb5_conf_location:          "%{mas306::sasl_krb5_conf_location}"
+agents:
+  agent:
+    service_name:       'flume-ng-agent'
+    service_hasstatus:  true
+    service_hasrestart: true
+    config_filename:    'flume.conf'
+    status:             'enabled'
+    restart_on_change:  true
+    java_opts:          '-Xms4000m -Xmx4000m'
+    jmx_port:           1702
+            </code>
+            </pre>
+        </section>
+
+        <section>
+            <h3>Changes in the MAS module - manifests/flume.pp</h3>
+            <pre><code class="puppet" data-trim contenteditable>
+            class mas306::flume(
+              Hash $configuration = {},
+              $installer_url = 'filestore://flume/mas306/flume-ng-1.7.0-cdh5.4.8.tar.gz',
+              $installer_sha1 = undef,
+            ) {
+                $_configuration = deep_merge(read_yamls('configuration.yaml', ['data/flume']), $configuration)
+
+                class { '::cdh::flume_n':
+                    configuration => $_configuration
+                }
+            }
+
+            </code>
+            </pre>
+        </section>
+
+        <section>
+            <h3>Changes in the CDH module - manifests/flume_n.pp</h3>
+            <pre><code class="puppet" data-trim contenteditable>
+            class cdh::flume_n(
+              Hash $configuration,
+            ) inherits cdh::flume::params {
+                :
+                :
+                  keys($configuration['agents']).each |String $flume_agent_name| {
+                    $_agent_config = deep_merge($configuration['defaults'], $configuration['agents'][$flume_agent_name])
+                    :
+                    # Read all the properties specific to the each flume agent
+                    # Configure the flume agent like service, log4j.properties, jmx port, java_opts etc.,
+                  }
+
+            }
+            </code>
+            </pre>
+        </section>
+
+        <section>
+            <h3>Changes in the CDH module - manifests/flume/config.pp</h3>
+            <ul>
+                <li class="fragment">Support for passing in the configuration per agent</li>
+            </ul>
+            </code>
+            </pre>
+        </section>
+
+        <section>
+            <h3>How a consumer can use ?</h3>
+            <ul>
+                <li>YAML Configuration</li>
+            </ul>
+					<pre><code class="yaml" data-trim contenteditable>
+plugin-name:
+  flume_configuration:
+    ## FLUME AGENT NAME
+    agent:
+      sources:
+      channels:
+      sinks:
+    agent-2:
+      sources:
+      channels:
+      sinks:
+
+						</code>
+					</pre>
+        </section>
+        <section>
+            <h3>How a new MAS CSV plugin can be added</h3>
+            <ul>
+                <li class="fragment">DAF ticket <a href="http://jira.motive.com/browse/DAF-1630">DAF-1630</a></li>
+            </ul>
+        </section>
+
+        <section>
+            <h3>How only flume configuration can be added ?</h3>
+            <ul>
+                <li class="fragment">MAS ticket <a href="http://jira.motive.com/browse/MAS-1439">MAS-1439</a></li>
+            </ul>
+        </section>
+
+        <section>
+            <h3>Q & A</h3>
+            <img data-src="/images/q-n-a.jpg">
+        </section>
+    </div>
+
+</div>
+
+<script src="lib/js/head.min.js"></script>
+<script src="js/reveal.js"></script>
+
+<script>
+
+    // More info https://github.com/hakimel/reveal.js#configuration
+    Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+        markdown: {
+            smartypants: true
+        },
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+        // More info https://github.com/hakimel/reveal.js#dependencies
+        dependencies: [
+            {
+                src: 'lib/js/classList.js', condition: function () {
+                return !document.body.classList;
+            }
+            },
+            {
+                src: 'plugin/markdown/marked.js', condition: function () {
+                return !!document.querySelector('[data-markdown]');
+            }
+            },
+            {
+                src: 'plugin/markdown/markdown.js', condition: function () {
+                return !!document.querySelector('[data-markdown]');
+            }
+            },
+            {
+                src: 'plugin/highlight/highlight.js', async: true, callback: function () {
+                hljs.initHighlightingOnLoad();
+            }
+            },
+            {src: 'plugin/zoom-js/zoom.js', async: true},
+            {src: 'plugin/notes/notes.js', async: true}
+        ]
+    });
+    Reveal.configure({slideNumber: 'c/t'});
+
+</script>
+
+</body>
+</html>
